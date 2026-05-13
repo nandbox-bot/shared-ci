@@ -21,7 +21,7 @@ COPY --from=builder /app/target/extension-custom-logic-1.0.0.jar app.jar
 COPY --from=builder /app/target/dependency/*.jar lib/
 
 # Copy property/config files from local context
-COPY token.properties token.properties
+# COPY token.properties token.properties
 COPY config.properties config.properties
 
 # Run the app with full classpath (app + dependencies)

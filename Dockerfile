@@ -25,4 +25,4 @@ COPY --from=builder /app/target/dependency/*.jar lib/
 COPY config.properties config.properties
 
 # Run the app with full classpath (app + dependencies)
-CMD ["java", "-cp", "app.jar:lib/*", "org.example.ExtensionCustomLogic"]
+CMD ["java", "-cp", "app.jar:lib/*", "com.nandbox.extension.ExtensionCustomLogic"]

@@ -2,6 +2,10 @@ name: Build & Push to GHCR
 
 on:
   workflow_call:
+    inputs:
+      image_tag:
+        required: true
+        type: string
     secrets:
       WEBHOOK_URL:
         required: true
@@ -45,7 +49,7 @@ jobs:
           context: .
           file: shared-ci/Dockerfile
           push: true
-          tags: ghcr.io/${{ env.REPO_OWNER_LOWER }}:${{ github.ref_name }}-${{ github.sha }}
+          tags: ghcr.io/${{ env.REPO_OWNER_LOWER }}:${{ github.ref_name }}-${{ inputs.image_tag }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
          
@@ -59,5 +63,5 @@ jobs:
             -H "Content-Type: application/json" \
             -d '{
               "bot_name": "${{ github.repository }}",
-              "tag": "${{ github.ref_name }}-${{ github.sha }}"
+              "tag": "${{ github.ref_name }}-${{ inputs.image_tag }}"
             }'

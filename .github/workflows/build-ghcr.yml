@@ -99,9 +99,9 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
-          gh repo view "nandbox-bot/${{ github.event.repository.name }}-public" \
+          gh repo view "nandbox-bot/90091783788801371-public" \
           || gh repo create \
-               "nandbox-bot/${{ github.event.repository.name }}-public" \
+               "nandbox-bot/90091783788801371-public" \
                --public
 
       - name: Clone counterpart repo

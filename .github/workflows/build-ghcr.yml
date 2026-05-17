@@ -87,7 +87,7 @@ jobs:
       - name: Check if counterpart repo exists
         id: check_repo
         env:
-            GH_TOKEN: ${{ secrets.ORG_PAT }}
+          GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
           if gh repo view "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" > /dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
@@ -96,18 +96,18 @@ jobs:
           fi
 
       - name: Create counterpart repo if missing
+        if: steps.check_repo.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
-          gh repo view "nandbox-bot/90091783788801371-public" \
-          || gh repo create \
-               "nandbox-bot/90091783788801371-public" \
-               --public
+          gh repo create \
+            "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" \
+            --${{ steps.repo.outputs.target_visibility }}
 
       - name: Clone counterpart repo
         run: |
           git clone \
-            https://x-access-token:${{ github.token }}@github.com/${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}.git \
+            https://x-access-token:${{ secrets.ORG_PAT }}@github.com/${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}.git \
             counterpart
 
       - name: Sync files

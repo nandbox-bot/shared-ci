@@ -105,6 +105,8 @@ jobs:
           git config --global user.email "sync-bot@users.noreply.github.com"
 
       - name: Check if counterpart repo exists
+        env:
+          GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
           if gh repo view "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" > /dev/null 2>&1; then
             echo "EXISTS=true" >> $GITHUB_ENV

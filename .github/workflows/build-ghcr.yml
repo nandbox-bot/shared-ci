@@ -12,7 +12,7 @@ permissions:
 
 jobs:
   docker:
-    if: "!endsWith(github.repository, '-public')"
+    if: "!endsWith(github.event.repository.name, '-public')"
     runs-on: ubuntu-latest
 
     steps:

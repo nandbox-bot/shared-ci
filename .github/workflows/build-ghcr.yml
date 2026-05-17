@@ -96,14 +96,13 @@ jobs:
           fi
 
       - name: Create counterpart repo if missing
-        if: steps.check_repo.outputs.exists == 'false'
         env:
-            GH_TOKEN: ${{ secrets.ORG_PAT }}
+          GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
-          gh repo create \
-            "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" \
-            --${{ steps.repo.outputs.target_visibility }} \
-            --confirm
+          gh repo view "nandbox-bot/${{ github.event.repository.name }}-public" \
+          || gh repo create \
+               "nandbox-bot/${{ github.event.repository.name }}-public" \
+               --public
 
       - name: Clone counterpart repo
         run: |

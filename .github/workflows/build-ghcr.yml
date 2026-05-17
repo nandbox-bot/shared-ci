@@ -50,15 +50,10 @@ jobs:
           cache-to: type=gha,mode=max
 
   sync:
+    if: "!contains(github.event.head_commit.message, '[sync-bot]')"
     runs-on: ubuntu-latest
 
     steps:
-      - name: Prevent infinite sync loops
-        if: contains(github.event.head_commit.message, '[sync-bot]')
-        run: |
-          echo "Bot commit detected. Skipping sync."
-          exit 0
-
       - name: Checkout source repo
         uses: actions/checkout@v4
         with:

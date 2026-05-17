@@ -122,13 +122,13 @@ jobs:
         run: |
           git clone \
             https://x-access-token:${{ secrets.ORG_PAT }}@github.com/${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}.git \
-            counterpart
+            .counterpart
 
       - name: Sync files
         run: |
           rsync -av --delete \
             --exclude '.git' \
-            ./ counterpart/
+            ./ .counterpart/
 
       - name: Commit synced changes
         run: |

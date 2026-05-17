@@ -132,7 +132,6 @@ jobs:
         run: |
           rsync -av --delete \
             --exclude '.git' \
-            --exclude '.github' \
             ./ .counterpart/
 
       - name: Commit synced changes

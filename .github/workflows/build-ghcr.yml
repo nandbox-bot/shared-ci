@@ -64,12 +64,12 @@ jobs:
 
       - name: Create counterpart repo if missing
         if: env.EXISTS == 'false'
+        env:
+          GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
           echo "Creating repo ${{ steps.repo.outputs.target_repo }} with visibility ${{ steps.repo.outputs.target_visibility }}"
-          gh repo create \
-            "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" \
-            --${{ steps.repo.outputs.target_visibility }} \
-            --confirm
+          gh repo create "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" \
+            --${{ steps.repo.outputs.target_visibility }}
 
       - name: Clone counterpart repo
         run: |

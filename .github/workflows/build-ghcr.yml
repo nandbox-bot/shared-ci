@@ -1,27 +1,21 @@
-name: Bidirectional Repo Sync
+name: Shared CI + Bidirectional Sync
 
 on:
   workflow_call:
 
 permissions:
   contents: write
+  packages: write
 
 jobs:
-  sync:
+  docker:
+    if: "!endsWith(github.repository, '-public')"
     runs-on: ubuntu-latest
 
     steps:
-      - name: Prevent infinite sync loops
-        if: contains(github.event.head_commit.message, '[sync-bot]')
-        run: |
-          echo "Bot commit detected. Skipping sync."
-          exit 0
-
       - name: Checkout source repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-          
+
       - name: Convert repository owner to lowercase
         run: |
           echo "REPO_OWNER_LOWER=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
@@ -52,6 +46,21 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Prevent infinite sync loops
+        if: contains(github.event.head_commit.message, '[sync-bot]')
+        run: |
+          echo "Bot commit detected. Skipping sync."
+          exit 0
+
+      - name: Checkout source repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Determine counterpart repository
         id: repo
         run: |
@@ -60,19 +69,22 @@ jobs:
 
           if [[ "$REPO_NAME" == *"-public" ]]; then
               TARGET_REPO="${REPO_NAME%-public}"
+              TARGET_VISIBILITY="private"
           else
               TARGET_REPO="${REPO_NAME}-public"
+              TARGET_VISIBILITY="public"
           fi
 
           echo "repo_owner=$REPO_OWNER" >> $GITHUB_OUTPUT
           echo "target_repo=$TARGET_REPO" >> $GITHUB_OUTPUT
+          echo "target_visibility=$TARGET_VISIBILITY" >> $GITHUB_OUTPUT
 
       - name: Configure git
         run: |
           git config --global user.name "sync-bot"
           git config --global user.email "sync-bot@users.noreply.github.com"
 
-      - name: Check if target repo exists
+      - name: Check if counterpart repo exists
         id: check_repo
         env:
           GH_TOKEN: ${{ github.token }}
@@ -83,25 +95,17 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create counterpart repository if missing
+      - name: Create counterpart repo if missing
         if: steps.check_repo.outputs.exists == 'false'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          CURRENT_REPO=$(basename "${GITHUB_REPOSITORY}")
-
-          if [[ "$CURRENT_REPO" == *"-public" ]]; then
-            VISIBILITY="private"
-          else
-            VISIBILITY="public"
-          fi
-
           gh repo create \
             "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" \
-            --$VISIBILITY \
+            --${{ steps.repo.outputs.target_visibility }} \
             --confirm
 
-      - name: Clone counterpart repository
+      - name: Clone counterpart repo
         run: |
           git clone \
             https://x-access-token:${{ github.token }}@github.com/${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}.git \
@@ -114,7 +118,7 @@ jobs:
             --exclude '.github/workflows' \
             ./ counterpart/
 
-      - name: Commit changes
+      - name: Commit synced changes
         run: |
           cd counterpart
 
@@ -123,7 +127,7 @@ jobs:
           git commit -m "[sync-bot] mirror sync from ${GITHUB_REPOSITORY}" \
           || echo "No changes to commit"
 
-      - name: Push changes
+      - name: Push synced changes
         run: |
           cd counterpart
 

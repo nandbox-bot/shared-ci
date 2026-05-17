@@ -2,6 +2,9 @@ name: Shared CI + Bidirectional Sync
 
 on:
   workflow_call:
+    secrets:
+      ORG_PAT:
+        required: true
 
 permissions:
   contents: write

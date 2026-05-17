@@ -14,7 +14,8 @@ permissions:
 
 jobs:       
   sync:
-    if: "!contains(github.event.head_commit.message, '[sync-bot]')"
+    # Only run if not triggered by sync-bot commit (safe for workflow_call)
+    if: ${{ github.event.head_commit && !contains(github.event.head_commit.message, '[sync-bot]') }}
     runs-on: ubuntu-latest
 
     steps:
@@ -24,14 +25,17 @@ jobs:
           fetch-depth: 0
 
       - name: Setup GitHub CLI authentication
+        env:
+          GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
-          echo "${{ secrets.ORG_PAT }}" | gh auth login --with-token
+          echo "Authenticating gh CLI..."
+          gh auth status || echo "GH CLI ready"
 
       - name: Determine counterpart repository
         id: repo
         run: |
-          REPO_NAME=$(basename "${GITHUB_REPOSITORY}")
-          REPO_OWNER=$(dirname "${GITHUB_REPOSITORY}")
+          REPO_NAME="${GITHUB_REPOSITORY##*/}"
+          REPO_OWNER="${GITHUB_REPOSITORY%/*}"
 
           if [[ "$REPO_NAME" == *"-public" ]]; then
               TARGET_REPO="${REPO_NAME%-public}"
@@ -61,32 +65,42 @@ jobs:
       - name: Create counterpart repo if missing
         if: env.EXISTS == 'false'
         run: |
+          echo "Creating repo ${{ steps.repo.outputs.target_repo }} with visibility ${{ steps.repo.outputs.target_visibility }}"
           gh repo create \
             "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" \
-            --${{ steps.repo.outputs.target_visibility }}
+            --${{ steps.repo.outputs.target_visibility }} \
+            --confirm
 
       - name: Clone counterpart repo
         run: |
           git clone \
             https://x-access-token:${{ secrets.ORG_PAT }}@github.com/${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}.git \
-            .counterpart
+            .counterpart || (echo "Empty repo, initializing..." && mkdir .counterpart && cd .counterpart && git init && git checkout -b main)
 
       - name: Sync files
         run: |
           rsync -av --delete \
             --exclude '.git' \
+            --exclude '.github' \
             ./ .counterpart/
 
       - name: Commit synced changes
         run: |
           cd .counterpart
-
           git add .
 
-          git commit -m "[sync-bot] mirror sync from ${GITHUB_REPOSITORY}" \
-            || echo "No changes to commit"
+          if git diff-index --quiet HEAD --; then
+            echo "No changes to commit"
+          else
+            git commit -m "[sync-bot] mirror sync from ${GITHUB_REPOSITORY}"
+          fi
+
+      - name: Ensure main branch exists
+        run: |
+          cd .counterpart
+          git branch -M main || echo "Branch 'main' already exists"
 
       - name: Push synced changes
         run: |
           cd .counterpart
-          git push origin main
+          git push origin main --force

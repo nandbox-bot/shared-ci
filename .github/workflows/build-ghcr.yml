@@ -87,7 +87,7 @@ jobs:
       - name: Check if counterpart repo exists
         id: check_repo
         env:
-          GH_TOKEN: ${{ github.token }}
+            GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
           if gh repo view "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" > /dev/null 2>&1; then
             echo "exists=true" >> $GITHUB_OUTPUT
@@ -98,7 +98,7 @@ jobs:
       - name: Create counterpart repo if missing
         if: steps.check_repo.outputs.exists == 'false'
         env:
-          GH_TOKEN: ${{ github.token }}
+            GH_TOKEN: ${{ secrets.ORG_PAT }}
         run: |
           gh repo create \
             "${{ steps.repo.outputs.repo_owner }}/${{ steps.repo.outputs.target_repo }}" \

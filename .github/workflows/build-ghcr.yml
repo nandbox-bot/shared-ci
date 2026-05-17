@@ -89,7 +89,7 @@ jobs:
 
           if [[ "$REPO_NAME" == *"-public" ]]; then
               TARGET_REPO="${REPO_NAME%-public}"
-              TARGET_VISIBILITY="private"
+              TARGET_VISIBILITY="public"
           else
               TARGET_REPO="${REPO_NAME}-public"
               TARGET_VISIBILITY="public"
